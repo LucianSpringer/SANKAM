@@ -15,6 +15,7 @@ interface ObjectiveDef {
   difficulty: number; // 1: Beginner, 2: Intermediate, 3: Advanced
   keywords: string[]; // Vocabulary required to win
   aiBehavior: string; // Specific instruction for AI personality
+  constraints?: string[]; // Dynamic constraints to vary gameplay
 }
 
 interface ContextDef {
@@ -42,21 +43,24 @@ const CONTEXT_DB: ContextDef[] = [
         text: 'Talk about daily routine', 
         difficulty: 1, 
         keywords: ['Morning', 'Work', 'School', 'Time'],
-        aiBehavior: 'Ask about their day and share simple details about yours. Keep it casual.'
+        aiBehavior: 'Ask about their day and share simple details about yours. Keep it casual.',
+        constraints: ['Use the present tense', 'Mention a specific time of day', 'Ask the AI a question back']
       },
        { 
         id: 'interests', 
         text: 'Discuss shared interests', 
         difficulty: 2, 
         keywords: ['Like', 'Hobby', 'Fun', 'Why'],
-        aiBehavior: 'Find out what the user likes and ask enthusiastic follow-up questions.'
+        aiBehavior: 'Find out what the user likes and ask enthusiastic follow-up questions.',
+        constraints: ['Find at least one common interest', 'Explain why you enjoy a hobby', 'Use enthusiastic adjectives']
       },
       { 
         id: 'freestyle', 
         text: 'Chat freely about anything', 
         difficulty: 1, 
         keywords: [],
-        aiBehavior: 'Be friendly, open, and follow the user\'s lead. Ask open-ended questions.'
+        aiBehavior: 'Be friendly, open, and follow the user\'s lead. Ask open-ended questions.',
+        constraints: ['Keep the conversation going for 5 turns', 'Compliment the AI', 'Share a personal story']
       }
     ]
   },
@@ -75,21 +79,24 @@ const CONTEXT_DB: ContextDef[] = [
         text: 'Order a specific customized drink', 
         difficulty: 1, 
         keywords: ['Large', 'Milk', 'Sugar', 'Please'],
-        aiBehavior: 'You are busy and speaking fast. Ask for specific details (size, milk type).'
+        aiBehavior: 'You are busy and speaking fast. Ask for specific details (size, milk type).',
+        constraints: ['Change your mind once', 'Ask for a recommendation', 'Be extremely polite']
       },
       { 
         id: 'wifi_issue', 
         text: 'Ask why the WiFi is not working', 
         difficulty: 2, 
         keywords: ['Connection', 'Password', 'Slow', 'Network'],
-        aiBehavior: 'Apologize but explain the policy requires a purchase first.'
+        aiBehavior: 'Apologize but explain the policy requires a purchase first.',
+        constraints: ['Explain you have urgent work', 'Offer to buy a cookie', 'Ask to speak to the manager']
       },
       { 
         id: 'wrong_order', 
         text: 'Complain that you received the wrong item', 
         difficulty: 2, 
         keywords: ['Mistake', 'Ordered', 'Receipt', 'Change'],
-        aiBehavior: 'Be slightly defensive at first, then offer a replacement if they are polite.'
+        aiBehavior: 'Be slightly defensive at first, then offer a replacement if they are polite.',
+        constraints: ['Don\'t accept the first offer', 'Show your receipt (verbally)', 'Ask for a refund']
       }
     ]
   },
@@ -108,21 +115,24 @@ const CONTEXT_DB: ContextDef[] = [
         text: 'Check in for an appointment', 
         difficulty: 1, 
         keywords: ['Appointment', 'Name', 'Time', 'ID'],
-        aiBehavior: 'Ask for their ID card and insurance information politely.'
+        aiBehavior: 'Ask for their ID card and insurance information politely.',
+        constraints: ['Spell your last name', 'Verify your date of birth', 'Ask about the wait time']
       },
       { 
         id: 'symptoms', 
         text: 'Describe a sudden illness', 
         difficulty: 2, 
         keywords: ['Pain', 'Fever', 'Since', 'Hurt'],
-        aiBehavior: 'Act concerned. Ask 3 diagnostic questions (Where does it hurt? How long?).'
+        aiBehavior: 'Act concerned. Ask 3 diagnostic questions (Where does it hurt? How long?).',
+        constraints: ['Mention a scale of 1 to 10', 'Describe exactly where it hurts', 'Express worry']
       },
       { 
         id: 'bill_dispute', 
         text: 'Argue about an expensive bill', 
         difficulty: 3, 
         keywords: ['Expensive', 'Insurance', 'Mistake', 'Pay'],
-        aiBehavior: 'Be bureaucratic and strict. Refer to hospital policy. Do not give in easily.'
+        aiBehavior: 'Be bureaucratic and strict. Refer to hospital policy. Do not give in easily.',
+        constraints: ['Demand to see an itemized list', 'Mention your insurance coverage', 'Threaten to write a bad review']
       }
     ]
   },
@@ -140,21 +150,24 @@ const CONTEXT_DB: ContextDef[] = [
         text: 'Give directions to a specific landmark', 
         difficulty: 1, 
         keywords: ['Left', 'Right', 'Straight', 'Stop'],
-        aiBehavior: 'Pretend to not know the area well. Ask for clarification on every turn.'
+        aiBehavior: 'Pretend to not know the area well. Ask for clarification on every turn.',
+        constraints: ['Correct a wrong turn', 'Warn about traffic ahead', 'Ask to stop at an ATM']
       },
       { 
         id: 'small_talk', 
         text: 'Make small talk about the city', 
         difficulty: 2, 
         keywords: ['Weather', 'Traffic', 'Food', 'From'],
-        aiBehavior: 'Be very friendly and ask personal questions about where the user is from.'
+        aiBehavior: 'Be very friendly and ask personal questions about where the user is from.',
+        constraints: ['Ask the driver for a restaurant tip', 'Compliment the city', 'Discuss the weather']
       },
       { 
         id: 'payment_method', 
         text: 'Negotiate paying with credit card when the machine is broken', 
         difficulty: 3, 
         keywords: ['Cash', 'Card', 'Machine', 'ATM'],
-        aiBehavior: 'Insist on cash. Claim the machine is broken. Be annoyed.'
+        aiBehavior: 'Insist on cash. Claim the machine is broken. Be annoyed.',
+        constraints: ['Explain you have no cash', 'Suggest a bank transfer', 'Be firm but polite']
       }
     ]
   },
@@ -172,14 +185,16 @@ const CONTEXT_DB: ContextDef[] = [
         text: 'Ask for the price of an item', 
         difficulty: 1, 
         keywords: ['How much', 'Cost', 'Expensive', 'Cheap'],
-        aiBehavior: 'Start with a very high price. Act offended if they offer too low.'
+        aiBehavior: 'Start with a very high price. Act offended if they offer too low.',
+        constraints: ['React with shock at the price', 'Compare with another shop', 'Walk away once']
       },
       { 
         id: 'haggling', 
         text: 'Negotiate a 50% discount', 
         difficulty: 3, 
         keywords: ['Lower', 'Deal', 'Offer', 'Discount'],
-        aiBehavior: 'Refuse the first two offers. Make a counter-offer. Only agree if they are persistent.'
+        aiBehavior: 'Refuse the first two offers. Make a counter-offer. Only agree if they are persistent.',
+        constraints: ['Offer a bulk buy deal', 'Point out a flaw in the item', 'Use a friendly tone']
       }
     ]
   }
@@ -196,9 +211,6 @@ class ScenarioGenerator {
    * 3. Selects an Objective POSSIBLE in that context (filtered by difficulty).
    */
   public generateScenario(level: 'Beginner' | 'Intermediate' | 'Advanced'): Scenario {
-    // Filter out 'general' from random generation to keep it special/distinct if desired,
-    // or keep it in the mix. For now, let's keep it in the mix but give it low weight? 
-    // Actually, pure random is fine.
     const context = this.pickRandom(CONTEXT_DB);
     return this.buildScenarioFromContext(context, level);
   }
@@ -215,8 +227,6 @@ class ScenarioGenerator {
   public generateBatch(count: number, level: 'Beginner' | 'Intermediate' | 'Advanced'): Scenario[] {
     const batch: Scenario[] = [];
     for (let i = 0; i < count; i++) {
-      // We filter out 'general' from the random batch so it doesn't duplicate the static card
-      // that we will likely show in the UI.
       const nonGeneralContexts = CONTEXT_DB.filter(c => c.id !== 'general');
       const context = this.pickRandom(nonGeneralContexts);
       batch.push(this.buildScenarioFromContext(context, level));
@@ -277,13 +287,19 @@ class ScenarioGenerator {
       conditions.push(`Vocabulary: Use words like "${keywordsToShow}"`);
     }
 
-    // 3. Level-Specific Constraint
-    if (level === 'Beginner') {
-      conditions.push('Constraint: Use polite greetings (Hello, Please)');
-    } else if (level === 'Intermediate') {
-      conditions.push('Constraint: Speak in full sentences');
+    // 3. Dynamic Constraint (Random from Objective Definition)
+    if (objective.constraints && objective.constraints.length > 0) {
+        const constraint = this.pickRandom(objective.constraints);
+        conditions.push(`Constraint: ${constraint}`);
     } else {
-      conditions.push('Constraint: Use complex sentence structures');
+        // Fallback logic if no specific constraints are defined
+         if (level === 'Beginner') {
+            conditions.push('Constraint: Use polite greetings (Hello, Please)');
+         } else if (level === 'Intermediate') {
+            conditions.push('Constraint: Speak in full sentences');
+         } else {
+            conditions.push('Constraint: Use complex sentence structures');
+         }
     }
 
     return conditions;

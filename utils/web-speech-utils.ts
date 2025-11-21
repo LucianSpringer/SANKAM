@@ -4,7 +4,7 @@ export class SpeechRecognizer {
   private isListening: boolean = false;
 
   constructor(languageCode: string, onResult: (text: string, isFinal: boolean) => void, onEnd: () => void) {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
       console.warn("Web Speech API not supported in this browser.");
       return;

@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { GoogleGenAI, LiveServerMessage, Modality, Chat } from '@google/genai';
 import { createPcmBlob, decodeAudioData, decodeBase64 } from '../utils/audio-utils';
@@ -96,7 +97,7 @@ export const useLiveApi = ({ language, systemInstruction, level }: UseLiveApiPro
       setError(null);
       isIntentionalDisconnectRef.current = false;
 
-      const InputContextClass = (window.AudioContext || (window as any).webkitAudioContext);
+      const InputContextClass = window.AudioContext || window.webkitAudioContext;
       const inputCtx = new InputContextClass({ sampleRate: 16000 });
       const outputCtx = new InputContextClass({ sampleRate: 24000 }); 
 
@@ -132,6 +133,9 @@ export const useLiveApi = ({ language, systemInstruction, level }: UseLiveApiPro
             source.connect(analyser);
             analyserNodeRef.current = analyser;
 
+            // TODO: Migrate to AudioWorklet for off-main-thread processing to improve performance.
+            // ScriptProcessorNode is deprecated and runs on the main thread, but is used here 
+            // for simplicity to avoid separate worker file configuration in this setup.
             const processor = inputCtx.createScriptProcessor(4096, 1, 1);
             scriptProcessorRef.current = processor;
 

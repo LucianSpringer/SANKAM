@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type, Modality } from "@google/genai";
 import { WordScore } from "../types";
 
@@ -13,7 +14,7 @@ export interface PhoneticData {
  * This metric represents the minimum number of single-character edits (insertions, deletions, or substitutions)
  * required to change one word into the other.
  */
-function calculateLevenshteinDistance(a: string, b: string): number {
+export function calculateLevenshteinDistance(a: string, b: string): number {
   const matrix: number[][] = [];
 
   // 1. Initialize the matrix

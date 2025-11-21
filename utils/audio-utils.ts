@@ -1,3 +1,4 @@
+
 import { Blob } from '@google/genai';
 
 /**
@@ -94,7 +95,7 @@ export async function playAudioData(
   base64Data: string, 
   sampleRate: number = 24000
 ): Promise<void> {
-  const AudioContextClass = (window.AudioContext || (window as any).webkitAudioContext);
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
   const ctx = new AudioContextClass({ sampleRate });
   
   try {

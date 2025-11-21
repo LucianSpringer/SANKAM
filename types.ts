@@ -67,3 +67,13 @@ export interface PracticeSession {
   scenarioEmoji: string;
   messageCount: number;
 }
+
+// Augment the global Window interface to include vendor-prefixed APIs
+// This avoids using (window as any) throughout the codebase
+declare global {
+  interface Window {
+    webkitAudioContext: typeof AudioContext;
+    SpeechRecognition: any;
+    webkitSpeechRecognition: any;
+  }
+}

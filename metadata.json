@@ -1,0 +1,7 @@
+{
+  "name": "Sankam",
+  "description": "Language Learner Buddy - A real-time conversational language learning partner.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

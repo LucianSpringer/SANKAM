@@ -1,8 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { UserProfile, UserPreferences, LanguageConfig, PracticeSession } from '../types';
 import SelectionModal from './SelectionModal';
 import EditProfileModal from './EditProfileModal';
-import { getHistory, clearHistory, formatDuration, formatDate } from '../utils/history-service';
+import { sessionRepository } from '../utils/history-service';
+import { aggregateStats } from '../utils/analytics-engine';
 
 interface ProfileViewProps {
   userProfile: UserProfile;
@@ -24,12 +26,33 @@ const ProfileView: React.FC<ProfileViewProps> = ({
   const [activeModal, setActiveModal] = useState<string | null>(null);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [history, setHistory] = useState<PracticeSession[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [statsData, setStatsData] = useState({
+      totalSessions: 0,
+      timeSpoken: '0.0',
+      wordsLearned: 0,
+      fluencyScore: 0
+  });
 
-  // Load history when tab changes
+  // Load history when tab changes or on mount
   useEffect(() => {
-    if (activeTab === 'history') {
-      setHistory(getHistory());
-    }
+    const loadData = async () => {
+      setIsLoadingHistory(true);
+      const data = await sessionRepository.getHistory();
+      setHistory(data);
+      
+      // Calculate Analytics
+      const agg = aggregateStats(data);
+      setStatsData({
+          totalSessions: agg.totalSessions,
+          timeSpoken: agg.totalTimeHours,
+          wordsLearned: agg.totalWords,
+          fluencyScore: agg.fluencyScore
+      });
+      
+      setIsLoadingHistory(false);
+    };
+    loadData();
   }, [activeTab]);
 
   // Options Configuration
@@ -64,24 +87,24 @@ const ProfileView: React.FC<ProfileViewProps> = ({
 
   const stats = [
     { 
-        label: 'Current Streak', 
-        value: '5 Days', 
+        label: 'Fluency Score', 
+        value: `${statsData.fluencyScore}/100`, 
         icon: '🔥', 
         color: 'text-orange-400',
         bg: 'bg-orange-500/10',
         border: 'border-orange-500/20'
     },
     { 
-        label: 'Time Spoken', 
-        value: '2.5 Hours', 
+        label: 'Time Spoken (Hrs)', 
+        value: statsData.timeSpoken, 
         icon: '⏱️', 
         color: 'text-sky-400',
         bg: 'bg-sky-500/10',
         border: 'border-sky-500/20'
     },
     { 
-        label: 'Words Learned', 
-        value: '42', 
+        label: 'Est. Words Spoken', 
+        value: statsData.wordsLearned.toLocaleString(), 
         icon: '🧠', 
         color: 'text-purple-400',
         bg: 'bg-purple-500/10',
@@ -97,15 +120,15 @@ const ProfileView: React.FC<ProfileViewProps> = ({
         <div className="flex items-center gap-6">
           <div className="relative group cursor-pointer" onClick={() => setIsEditProfileOpen(true)}>
               <div className="absolute -inset-0.5 bg-gradient-to-r from-sky-600 to-indigo-600 rounded-full opacity-75 group-hover:opacity-100 transition duration-200 blur"></div>
-              <div className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-slate-900 bg-slate-800">
+              <div className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-slate-900 bg-slate-800 ring-2 ring-transparent group-hover:ring-sky-500/50 transition-all duration-300">
                   <img 
                       src={userProfile.avatarUrl} 
                       alt="User Avatar" 
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                   />
                   {/* Edit Overlay */}
-                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
+                      <svg className="w-8 h-8 text-white drop-shadow-lg transform group-hover:scale-110 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                       </svg>
                   </div>
@@ -274,10 +297,11 @@ const ProfileView: React.FC<ProfileViewProps> = ({
                 <h3 className="text-xl font-bold text-white">Recent Practice Sessions</h3>
                 {history.length > 0 && (
                     <button 
-                        onClick={() => {
+                        onClick={async () => {
                             if (window.confirm('Are you sure you want to clear your history?')) {
-                                clearHistory();
+                                await sessionRepository.clearHistory();
                                 setHistory([]);
+                                setStatsData({ totalSessions: 0, timeSpoken: '0.0', wordsLearned: 0, fluencyScore: 0 });
                             }
                         }}
                         className="text-xs text-red-400 hover:text-red-300 px-3 py-1 rounded-full bg-red-500/10 hover:bg-red-500/20 transition-colors"
@@ -287,7 +311,11 @@ const ProfileView: React.FC<ProfileViewProps> = ({
                 )}
             </div>
 
-            {history.length === 0 ? (
+            {isLoadingHistory && history.length === 0 ? (
+               <div className="flex justify-center py-20">
+                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-500"></div>
+               </div>
+            ) : history.length === 0 ? (
                 <div className="text-center py-20 bg-white/5 rounded-3xl border border-white/5 border-dashed">
                     <div className="text-4xl mb-4 opacity-50">🕰️</div>
                     <p className="text-slate-400 font-medium">No practice history yet.</p>
@@ -304,7 +332,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({
                                      </span>
                                      <div>
                                          <h4 className="font-bold text-white">{session.scenarioName}</h4>
-                                         <p className="text-xs text-slate-400">{formatDate(session.date)}</p>
+                                         <p className="text-xs text-slate-400">{sessionRepository.formatDate(session.date)}</p>
                                      </div>
                                  </div>
                                  <div className="px-3 py-1 rounded-full bg-sky-500/10 text-sky-400 text-xs font-bold border border-sky-500/20">
@@ -319,7 +347,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({
                                      </svg>
                                      <span className="text-sm text-slate-300">
                                          <span className="text-slate-500 text-xs mr-1">DURATION</span>
-                                         {formatDuration(session.durationSeconds)}
+                                         {sessionRepository.formatDuration(session.durationSeconds)}
                                      </span>
                                  </div>
                                  <div className="bg-slate-900/50 rounded-lg p-2 flex items-center gap-2">

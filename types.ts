@@ -1,3 +1,4 @@
+
 export interface LanguageConfig {
   code: string;
   name: string;
@@ -32,7 +33,9 @@ export interface Scenario {
   description: string;
   emoji: string;
   role: string;
-  difficulty: 'All Levels' | 'Beginner' | 'Intermediate' | 'Advanced';
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+  objectives: string[]; // User-facing winning conditions
+  aiSecretGoal: string; // Hidden AI instruction
 }
 
 export type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'error';

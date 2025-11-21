@@ -99,7 +99,7 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({ messages, onTextSelec
 
   return (
     <div className="relative h-full flex flex-col">
-      <div className="flex-1 overflow-y-auto p-4 space-y-8 glass-scroll" ref={scrollRef}>
+      <div className="flex-1 overflow-y-auto p-4 pb-40 space-y-8 glass-scroll" ref={scrollRef}>
         {messages.map((msg, idx) => {
           const hasError = msg.correction && !msg.correction.isCorrect;
           const isExpanded = expandedMessageIds.has(msg.id);
@@ -210,7 +210,32 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({ messages, onTextSelec
                                 <p className="text-slate-300 opacity-80">{msg.correction?.explanation}</p>
                              </div>
                              <div className="flex flex-col gap-1 mt-2">
-                                <span className="text-emerald-400 text-xs uppercase font-bold tracking-wider">Better way</span>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-emerald-400 text-xs uppercase font-bold tracking-wider">Better way</span>
+                                    <button 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (msg.correction?.corrected) {
+                                                handlePlayAudio(`${msg.id}-corrected`, msg.correction.corrected);
+                                            }
+                                        }}
+                                        className="p-1.5 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 transition-colors flex items-center gap-1"
+                                        title="Listen to corrected sentence"
+                                    >
+                                        {playingId === `${msg.id}-corrected` ? (
+                                           <span className="flex gap-0.5 items-center h-3 w-3 justify-center">
+                                                <span className="w-0.5 h-2 bg-emerald-400 animate-pulse"></span>
+                                                <span className="w-0.5 h-3 bg-emerald-400 animate-pulse delay-75"></span>
+                                                <span className="w-0.5 h-2 bg-emerald-400 animate-pulse delay-150"></span>
+                                           </span>
+                                        ) : (
+                                           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                                           </svg>
+                                        )}
+                                        <span className="text-[10px] font-bold uppercase">Play</span>
+                                    </button>
+                                </div>
                                 <p className="text-emerald-100 font-medium">{msg.correction?.corrected}</p>
                              </div>
                           </div>
@@ -236,6 +261,7 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({ messages, onTextSelec
              )}
           </div>
         )})}
+        <div className="h-4"></div>
       </div>
       
       {selectionButton && onTextSelected && (

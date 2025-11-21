@@ -15,6 +15,16 @@ interface UseLiveApiProps {
   level: string;
 }
 
+/**
+ * Custom hook to manage the Gemini Live API connection.
+ * Handles audio streaming, WebSocket management, and message state.
+ * 
+ * @param props - Configuration props for the API connection.
+ * @param props.language - The target language configuration.
+ * @param props.systemInstruction - The system prompt for the AI.
+ * @param props.level - The user's proficiency level.
+ * @returns An object containing methods to control the session and current state variables.
+ */
 export const useLiveApi = ({ language, systemInstruction, level }: UseLiveApiProps) => {
   const [connectionState, setConnectionState] = useState<ConnectionState>('disconnected');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -35,9 +45,7 @@ export const useLiveApi = ({ language, systemInstruction, level }: UseLiveApiPro
   const isIntentionalDisconnectRef = useRef<boolean>(false);
   const chatSessionRef = useRef<Chat | null>(null);
   
-  // Track processed messages to prevent retry loops
   const processedCorrectionsRef = useRef<Set<string>>(new Set());
-
   const currentInputTranscriptionRef = useRef<string>('');
   const currentOutputTranscriptionRef = useRef<string>('');
 
@@ -45,17 +53,21 @@ export const useLiveApi = ({ language, systemInstruction, level }: UseLiveApiPro
     aiClientRef.current = new GoogleGenAI({ apiKey: API_KEY });
   }, []);
 
+  // Reset chat session when system instruction (context/language) changes
+  useEffect(() => {
+    chatSessionRef.current = null;
+    setMessages([]);
+  }, [systemInstruction]);
+
   // Correction Logic Effect
   useEffect(() => {
     const checkCorrections = async () => {
-        // Filter for messages that are finalized, have no correction, and haven't been processed yet
         const messagesToCorrect = messages.filter(
             m => m.role === 'user' && m.isFinal && !m.correction && !processedCorrectionsRef.current.has(m.id)
         );
 
         if (messagesToCorrect.length > 0) {
             for (const msg of messagesToCorrect) {
-                // Mark as processed immediately to prevent infinite retries if API call fails
                 processedCorrectionsRef.current.add(msg.id); 
                 
                 analyzeGrammar(msg.text, language, level).then(correction => {
@@ -72,6 +84,10 @@ export const useLiveApi = ({ language, systemInstruction, level }: UseLiveApiPro
     checkCorrections();
   }, [messages, language, level]);
 
+  /**
+   * Initiates the connection to the Gemini Live API.
+   * Sets up audio context, microphone stream, and WebSocket event listeners.
+   */
   const connect = useCallback(async () => {
     if (!aiClientRef.current) return;
 
@@ -110,7 +126,6 @@ export const useLiveApi = ({ language, systemInstruction, level }: UseLiveApiPro
             const source = inputCtx.createMediaStreamSource(stream);
             sourceNodeRef.current = source;
             
-            // Create Analyser for Visualizer
             const analyser = inputCtx.createAnalyser();
             analyser.fftSize = 512;
             analyser.smoothingTimeConstant = 0.8;
@@ -123,7 +138,6 @@ export const useLiveApi = ({ language, systemInstruction, level }: UseLiveApiPro
             processor.onaudioprocess = (e) => {
               const inputData = e.inputBuffer.getChannelData(0);
               
-              // Calculate volume for basic fallback/state
               let sum = 0;
               for(let i = 0; i < inputData.length; i++) {
                   sum += inputData[i] * inputData[i];
@@ -216,6 +230,9 @@ export const useLiveApi = ({ language, systemInstruction, level }: UseLiveApiPro
     }
   }, [language, systemInstruction]);
 
+  /**
+   * Disconnects the current session and cleans up audio resources.
+   */
   const disconnect = useCallback(async () => {
     isIntentionalDisconnectRef.current = true;
     if (sessionPromiseRef.current) {
@@ -240,15 +257,20 @@ export const useLiveApi = ({ language, systemInstruction, level }: UseLiveApiPro
     analyserNodeRef.current = null;
   }, []);
 
-  // Standard Text Chat Functionality
+  /**
+   * Sends a text message to the chat model (standard mode, not Live).
+   * Also performs pronunciation analysis on the input.
+   * 
+   * @param text - The message text to send.
+   */
   const sendTextMessage = useCallback(async (text: string) => {
       if (!aiClientRef.current) return;
       
-      // Add user message immediately
       const userMsgId = Date.now().toString();
       
-      // Analyze text input immediately for "pronunciation" (or typed accuracy in this context)
-      const analysis = assessPronunciation(text);
+      // Pass the text itself as the "target" for the Levenshtein algorithm
+      // in this text-mode to ensure high scores for typed input
+      const analysis = assessPronunciation(text, text);
 
       setMessages(prev => [...prev, { 
           id: userMsgId, 
@@ -260,7 +282,6 @@ export const useLiveApi = ({ language, systemInstruction, level }: UseLiveApiPro
       }]);
 
       try {
-          // Initialize chat session if not exists
           if (!chatSessionRef.current) {
               chatSessionRef.current = aiClientRef.current.chats.create({
                   model: CHAT_MODEL,
@@ -285,6 +306,9 @@ export const useLiveApi = ({ language, systemInstruction, level }: UseLiveApiPro
       }
   }, [systemInstruction]);
 
+  /**
+   * Updates an in-progress message in the state.
+   */
   const updateOngoingMessage = (role: 'user' | 'model', text: string) => {
     setMessages(prev => {
       const lastMsg = prev[prev.length - 1];
@@ -296,6 +320,10 @@ export const useLiveApi = ({ language, systemInstruction, level }: UseLiveApiPro
     });
   };
 
+  /**
+   * Finalizes a message turn.
+   * Triggers pronunciation assessment for user messages.
+   */
   const finalizeMessage = (role: 'user' | 'model', text: string) => {
      setMessages(prev => {
          let index = -1;
@@ -306,6 +334,8 @@ export const useLiveApi = ({ language, systemInstruction, level }: UseLiveApiPro
            }
          }
          
+         // In live spoken mode, we don't have a target text to compare against,
+         // so we pass undefined to assessPronunciation.
          const analysis = role === 'user' ? assessPronunciation(text) : undefined;
          
          if (index !== -1) {

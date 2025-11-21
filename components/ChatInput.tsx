@@ -22,6 +22,18 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled, language
     }
   }, [input]);
 
+  // Reset recognizer when language changes
+  useEffect(() => {
+    if (recognizerRef.current) {
+      // Stop existing instance if running
+      if (isListening) {
+        recognizerRef.current.stop();
+        setIsListening(false);
+      }
+      recognizerRef.current = null;
+    }
+  }, [language.code]);
+
   const handleSend = () => {
     if (input.trim()) {
       onSendMessage(input.trim());

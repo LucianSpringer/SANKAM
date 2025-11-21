@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
     <title>Sankam</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -12,6 +12,7 @@
         background-color: #0f172a; /* Slate 900 */
         color: #f8fafc; /* Slate 50 */
         overflow: hidden; /* Prevent body scroll, handle in app */
+        overscroll-behavior: none; /* Prevent pull-to-refresh bounce */
       }
       
       /* Animated Gradient Background */
@@ -64,6 +65,6 @@
 </head>
   <body>
     <div class="bg-animated"></div>
-    <div id="root" class="h-screen w-screen overflow-hidden"></div>
+    <div id="root" class="h-[100dvh] w-screen overflow-hidden"></div>
   </body>
 </html>

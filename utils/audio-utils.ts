@@ -1,7 +1,10 @@
 import { Blob } from '@google/genai';
 
 /**
- * Decodes a base64 string into a Uint8Array.
+ * Decodes a base64 encoded string into a Uint8Array.
+ * 
+ * @param base64 - The base64 encoded string.
+ * @returns A Uint8Array containing the decoded binary data.
  */
 export function decodeBase64(base64: string): Uint8Array {
   const binaryString = atob(base64);
@@ -15,6 +18,9 @@ export function decodeBase64(base64: string): Uint8Array {
 
 /**
  * Encodes a Uint8Array into a base64 string.
+ * 
+ * @param bytes - The Uint8Array to encode.
+ * @returns A base64 encoded string representation of the data.
  */
 export function encodeBase64(bytes: Uint8Array): string {
   let binary = '';
@@ -26,7 +32,13 @@ export function encodeBase64(bytes: Uint8Array): string {
 }
 
 /**
- * Decodes raw PCM audio data into an AudioBuffer.
+ * Decodes raw PCM audio data (16-bit integer) into a web AudioBuffer.
+ * 
+ * @param data - The Uint8Array containing raw PCM bytes (Int16).
+ * @param ctx - The AudioContext instance to use for buffer creation.
+ * @param sampleRate - The sample rate of the audio data (e.g., 24000Hz).
+ * @param numChannels - The number of audio channels (usually 1 for mono).
+ * @returns A promise that resolves to the created AudioBuffer.
  */
 export async function decodeAudioData(
   data: Uint8Array,
@@ -49,7 +61,11 @@ export async function decodeAudioData(
 }
 
 /**
- * Converts Float32 audio data from the browser microphone to the format expected by Gemini (PCM Int16).
+ * Converts Float32 audio data from the browser microphone into a PCM Int16 Blob
+ * suitable for transmission to the Gemini API.
+ * 
+ * @param data - The Float32Array audio data from the MediaStream.
+ * @returns A GoogleGenAI Blob object containing the base64 encoded PCM data and mime type.
  */
 export function createPcmBlob(data: Float32Array): Blob {
   const l = data.length;
@@ -67,7 +83,12 @@ export function createPcmBlob(data: Float32Array): Blob {
 }
 
 /**
- * Helper to decode and play raw PCM audio data (base64 encoded).
+ * Helper function to decode and play raw PCM audio data immediately.
+ * Creates a temporary AudioContext to handle the playback.
+ * 
+ * @param base64Data - The raw PCM audio data encoded in base64.
+ * @param sampleRate - The sample rate for playback (default 24000).
+ * @returns A promise that resolves when the audio has finished playing.
  */
 export async function playAudioData(
   base64Data: string, 
